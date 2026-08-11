@@ -1731,6 +1731,9 @@
             document.querySelector(`[data-value="${value}"]`).classList.add('active');
         }
 
+        // ⚠️ استبدل الرابط ده برابط الـ Web App بتاعك بعد عمل الـ Deploy (خطوات الشرح تحت)
+        const RSVP_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxPC0caEOH3TkmyXXw6SSuVxaAnwpcCJjO9gan9Dm6mJwn4UL511mhLT1tcS18e2v06KQ/exec';
+
         // Handle Form Submit
         document.getElementById('rsvpForm').addEventListener('submit', function (e) {
             e.preventDefault();
@@ -1744,7 +1747,6 @@
                 return;
             }
 
-            // Save to localStorage
             const rsvpData = {
                 id: Date.now(),
                 name: name,
@@ -1753,19 +1755,30 @@
                 date: new Date().toISOString()
             };
 
-            // Get existing data
-            let existingData = JSON.parse(localStorage.getItem('weddingRSVP') || '[]');
-            existingData.push(rsvpData);
+            const submitBtn = document.querySelector('#rsvpForm .submit-btn');
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Sending...';
+            }
 
-            // Save back to localStorage
-            localStorage.setItem('weddingRSVP', JSON.stringify(existingData));
-
-            // Show success message
-            document.getElementById('rsvpForm').style.display = 'none';
-            document.getElementById('successMessage').style.display = 'block';
-
-            // Optional: Send to Google Sheets (see below)
-            // sendToGoogleSheets(rsvpData);
+            // Send to shared Google Sheet backend so ANY visitor from ANY device sees it
+            fetch(RSVP_SCRIPT_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify(rsvpData)
+            })
+                .then(() => {
+                    // Show success message
+                    document.getElementById('rsvpForm').style.display = 'none';
+                    document.getElementById('successMessage').style.display = 'block';
+                })
+                .catch(() => {
+                    alert('حصل خطأ أثناء إرسال الرد، من فضلك حاول تاني.');
+                    if (submitBtn) {
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = 'Submit';
+                    }
+                });
         });
     </script>
 </body>
